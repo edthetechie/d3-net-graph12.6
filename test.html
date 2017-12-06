@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+  <meta charset="utf-8">
+  <style>
+    .link {
+      stroke: #999;
+      stroke-opacity: 0.6;
+    }
+
+    .node text {
+      /*stroke: #fff;*/
+      stroke-width: 1.5px;
+      font: 10px sans-serif;
+    }
+
+
+    circle {
+      fill: #ccc;
+      stroke: #333;
+      stroke-width: 1.5px;
+    }
+
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+
+
+  <body>
+
+    
+        <script>
+          var currentLevel = -1; // initial level
+          var nodeFromTop;    // node name selected on the top level
+          // var TestGraph = {"nodes":
+          //                   [ {"text":"job", "uri":"#job", "value":1, "group":0},
+          //                     {"text":"Australia", "uri":"#Australia", "value":1, "group":3},
+          //                     {"text":"artificial intelligence", "uri":"#artificial_intelligence", "value":1, "group":0},
+          //                     {"text":"customer", "uri":"#customer", "value":1, "group":0},
+          //                     {"text":"energy", "uri":"#energy", "value":1, "group":0},
+          //                     {"text":"solar power", "uri":"#solar_power", "value":1, "group":0},
+          //                     {"text":"automation", "uri":"#automation", "value":1, "group":0},
+          //                     {"text":"retail", "uri":"#retail", "value":1, "group":0},
+          //                     {"text":"World", "uri":"#World", "value":1, "group":3}], 
+          //                 "links": 
+          //                   [{"source":4, "target":1, "value":1, "text":4410086},
+          //                     {"source":4, "target":8, "value":1, "text":4409485},
+          //                     {"source":4, "target":0, "value":1, "text":4406494},
+          //                     {"source":4, "target":7, "value":1, "text":4410086},
+          //                     {"source":4, "target":5, "value":1, "text":4410086},
+          //                     {"source":4, "target":2, "value":1, "text":4406494},
+          //                     {"source":4, "target":6, "value":1, "text":4406494},
+          //                     {"source":4, "target":3, "value":1, "text":4410086}]};
+          var qUrlVar = 'energy';
+        
+        function getDataSetFromAPI(node_name) {
+            var targetUrl;
+            if(currentLevel == -1) targetUrl = "top_api.php";    // when initial level
+            else if(currentLevel == 0) targetUrl = "api.php";    // when top level
+            else if(currentLevel == 1) {    // when second level     // when second level    
+              if(nodeFromTop == node_name) targetUrl = "top_api.php";
+              else {
+                // https://demo.shapingtomorrow.com/miscellaneous/d3-net-graph/second.cfm?q=Australia&node=income
+                  window.open('https://demo.shapingtomorrow.com/miscellaneous/d3-net-graph/second.cfm?q=' + nodeFromTop + '&node=' + node_name, '_self');
+                  return;
+              }
+            }
+             $.ajax({
+              type: "POST",
+              data: { 
+                node: node_name,
+                q: qUrlVar
+              },
+              url: targetUrl
+            })
+            .done(function(data, textStatus, jqXHR){
+              console.log('response');
+              console.log(data);
+              if(data == '') {
+                alert('Empty response!');
+                return;
+              }
+              var dataset = jQuery.parseJSON(data);
+              if(currentLevel == -1) currentLevel =0; // set to top level
+              else if(currentLevel == 0) currentLevel = 1;  // set to second level
+              else if(currentLevel == 1) currentLevel = 0;  // set to top level
+              console.log(dataset);
+              updateChart(dataset);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown){
+              // console.log(errorThrown);
+            }); 
+        }
+        //====================================================================
+        // This script is based on "Force With Labels.htm"
+
+        // size of the diagram
+        var w = $(document).width()-20;
+        var h = $(document).height()-20;
+
+        //var w = 1000;
+        //var h = 600;
+
+
+        //Set up the colour scale, domain needs to be pre-set otherwise colors get added by first use
+        var colors = d3.scale.category10().domain([0, 1, 2, 3, 4, 5]);
+        var link_hover_color = 'darkseagreen';
+
+        var linkDistance=150;		
+        var svg = d3.select("body").append("svg").attr({"width":w,"height":h});
+
+
+
+
+        // var TestGraph = {nodes: [{text: "Adam"}, {text: "Bob"} ], links: [{source: 0, target: 1}]};
+        // createChart( TestGraph );
+
+        // get Data set from ajax call
+        getDataSetFromAPI("energy");
+
+
+        //====================================================================
+
+        function createChart( graph ) {
+          //java.log( "Here we start" );
+          d3.selectAll("svg > *").remove();
+
+          var force = d3.layout.force()
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .size([w,h])
+            .linkDistance([linkDistance])
+            .charge([-300])
+            .theta(0.1)
+            .gravity(0.05)
+            .start();
+
+          var edges = svg.selectAll("line")
+            .data(graph.links)
+            .enter()
+            .append("line")
+            .style("stroke","#ccc")            
+            .attr("stroke-width", 2.0)
+            .attr({
+              "x1": function(d){return d.source.x;},
+              "y1": function(d){return d.source.y;},
+              "x2": function(d){return d.target.x;},
+              "y2": function(d){return d.target.y;}
+            })
+            .on("click", function (d) {
+              console.log('link clicked');
+              window.open('link.php?q=' + d.text, '_blank',"width=500, height=500");
+            })
+            .on('mouseover', function(d) {
+              console.log('hover link');
+              d3.select(this).attr({                
+                'stroke-width': 2.0,                
+                'cursor': 'pointer'
+              })
+              .style('stroke', link_hover_color);
+              
+            })
+            .on('mouseout', function(d) {
+              d3.select(this).attr({                                
+                'stroke-width': 2.0,
+                'cursor': 'default'                
+              })
+              .style('stroke','#ccc');              
+            });
+
+          var nodes = svg.selectAll("circle")
+            .data(graph.nodes)
+            .enter()
+            .append("circle")
+            .attr({"r":4})
+            .style("fill", function (d) {return colors( d.group );})
+            .on("click", function (d) {
+              console.log(d.text);                            
+              if(currentLevel == 0) { // when top-level
+                nodeFromTop = d.text;
+              } 
+              if (qUrlVar == d.text) {
+                // window.open('/testing/semmiekg/?q=' + qUrlVar, '_self'); 
+              }
+              else {
+                  getDataSetFromAPI(d.text);                  
+                  // var node_name = d.text;
+                  // $.ajax({
+                  //   type: "POST",
+                  //   data: { 
+                  //     node: node_name,
+                  //     q: qUrlVar
+                  //   },
+                  //   url: "api.php"
+                  // })
+                  // .done(function(data, textStatus, jqXHR){
+                  //   console.log('response');
+                  //   if(data == '') {
+                  //     alert('Empty response!');
+                  //     return;
+                  //   }
+                  //   var dataset = jQuery.parseJSON(data);
+                  //   console.log(dataset);
+                  //   currentLevel = 1; // second level
+                  //   updateChart(dataset);
+                  // })
+                  // .fail(function(jqXHR, textStatus, errorThrown){
+                  //   // console.log(errorThrown);
+                  // }); 
+              }
+              
+
+            })
+            .on('mouseover', function(d) {
+              d3.select(this).attr({
+                'fill-opacity': 0.7,
+                'cursor': 'pointer',
+                'r': 4 * 1.4
+              });
+              d3.select("text.nodelabel." + d.text.split(' ')[0])
+              .attr("font-size", "18px")
+              .attr('fill-opacity', 0.8);
+            })
+            .on('mouseout', function(d) {
+              d3.select(this).attr({
+                'fill-opacity': 1.0,
+                'cursor': 'default',
+                'r': 4
+              });
+              d3.select("text.nodelabel." + d.text.split(' ')[0])
+              .attr("font-size", "15px")
+              .attr('fill-opacity', 1.0);
+            })
+            .call(force.drag);
+
+          var nodelabels = svg.selectAll("text") 
+            .data(graph.nodes)
+            .enter()
+            .append("text")
+            .attr("class", function(d) {
+              return "nodelabel " + d.text.split(' ')[0];
+            })
+            .attr("font-size", "15px")
+            .attr("dx", 10)
+            .attr("dy", ".35em")
+            .style("fill", function (d) {return colors( d.group );})
+            .text(function(d){return d.text;});
+
+          var edgepaths = svg.selectAll(".edgepath")
+            .data(graph.links)
+            .enter()
+            .append('path')
+            .attr({
+              'd': function(d) {return 'M '+d.source.x+' '+d.source.y+' L '+ d.target.x +' '+d.target.y},
+              'class':'edgepath',
+              'id':function(d,i) {return 'edgepath'+i}
+            })
+            .style("pointer-events", "none")
+            .style("stroke-width", function (d) {              
+              return Math.sqrt( d.value );              
+            });
+
+          force.on("tick", function() {
+            edges.attr({
+              "x1": function(d){return d.source.x;},
+              "y1": function(d){return d.source.y;},
+              "x2": function(d){return d.target.x;},
+              "y2": function(d){return d.target.y;}
+            });
+
+            nodes.attr({
+              "cx":function(d){return d.x;},
+              "cy":function(d){return d.y;}
+            });
+
+            nodelabels.attr("x", function(d) { return d.x; }) 
+              .attr("y", function(d) { return d.y; });
+
+            edgepaths.attr('d', function(d) { 
+              var path='M '+d.source.x+' '+d.source.y+' L '+ d.target.x +' '+d.target.y;
+              //console.log(d)
+              return path
+            });       
+            
+          });
+        };
+
+
+        function updateChart( newData ) {
+          createChart(newData)
+        };
+      </script>
+
+    
+
+  </body>
+</html> 

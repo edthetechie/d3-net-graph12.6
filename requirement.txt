@@ -1,0 +1,20 @@
+We have a system generating data for a D3 visualisation but are lacking in experience with D3 and need someone to help us design and build a good looking, multi-level network graph using the "Force-Directed Graph" visualisation. This is a one-off job not a contract or permanent position, but if the results are good then we could send more work your way in the future. The technology stack is JavaScript, CSS and D3.js talking to a proprietary knowledge graphing engine. Design skills are a must because we need it to look really good. We have been working on developing a D3 visualisation and due to the complexity of D3 decided to bring in some outside expertise. The visualisation will be used to display "future topics" that are generated from our knowledge graph.
+
+We need the visualisation to be multi-layer so a node is clicked and more data is retrieved from the knowledge graph and displayed. The nodes need to be collapsible as well. The links will need to be clickable as well and they will integrate with out back-end systems in order to display the data that comprises the links. Nodes with no connections need to be clickable to URLs and submit various URL parameters. We have started building some code so we can illustrate the kind of thing we need with examples at a later stage in the discussions. The design of the network graph is really important and we plan to use coloured nodes and labels to give users more information.
+
+
+The nodes, for example you click on "Australia" and then the graph reloads with new data from our API.
+If you look in the source code on line 92 you'll see some preliminary functionality I built. I was trying to make it work with ajax calls to get new data
+Also the links need to be clickable so we can submit the ID numbers to our server and have it show the user the data that makes up the link
+
+We also need the user to be able to go back from the detail about "australia" to the original graph so they can navigate around and look at the data
+
+So we'd want the user to be able to click each node and see more details, then somehow also click back so they can open and close each node to see the links
+
+when click node, which ajax calls happen? to which url and what kind of data returned?
+
+
+
+Ok with the link it needs to have the URL, so the link between energy and Australia currently has an ID printed
+I'm Ed :-)
+Anonymous Frog: The printed ID needs to be not printed but submitted via URL parameters to a URL like: https://demo.shapingtomorrow.com/testing/semmiekg?links=4410086
